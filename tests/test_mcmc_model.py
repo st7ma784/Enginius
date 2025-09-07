@@ -14,7 +14,8 @@ class TestBayesianWaitTimeModel(unittest.TestCase):
     def setUp(self):
         self.n_locations = 3
         self.n_drivers = 5
-        self.model = BayesianWaitTimeModel(self.n_locations, self.n_drivers, device='auto')
+        # Force CPU usage for tests to ensure consistency
+        self.model = BayesianWaitTimeModel(self.n_locations, self.n_drivers, device='cpu')
         
         # Generate small test dataset
         self.generator = CarCollectionDataGenerator(seed=42)

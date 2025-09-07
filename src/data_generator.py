@@ -11,6 +11,7 @@ class CarCollectionDataGenerator:
         """
         Generate synthetic data for car collection wait times.
         """
+        self.seed = seed
         np.random.seed(seed)
         random.seed(seed)
 
@@ -34,13 +35,18 @@ class CarCollectionDataGenerator:
             "Industrial": 30,
         }
 
-        # Driver efficiency multipliers
+        # Driver efficiency multipliers (generate with consistent seed)
+        np.random.seed(seed)
         self.driver_efficiency = {
             driver: np.random.normal(1.0, 0.15) for driver in self.drivers
         }
 
     def generate_sample(self, n_samples: int = 1000) -> pd.DataFrame:
         """Generate synthetic car collection data samples."""
+        # Reset random seed to ensure reproducibility
+        np.random.seed(self.seed)
+        random.seed(self.seed)
+        
         data = []
 
         for _ in range(n_samples):

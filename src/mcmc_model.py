@@ -92,9 +92,9 @@ class BayesianWaitTimeModel:
         # Noise parameters - realistic scale
         noise_std = pyro.sample("noise_std", dist.HalfNormal(10.0))
 
-        # Extract features
-        location_idx = X[:, 0].long()
-        driver_idx = X[:, 1].long()
+        # Extract features and ensure they're on the correct device
+        location_idx = X[:, 0].long().to(X.device)
+        driver_idx = X[:, 1].long().to(X.device)
         hour = X[:, 2]
         checklist_length = X[:, 3]
         is_ev = X[:, 4]
@@ -104,7 +104,7 @@ class BayesianWaitTimeModel:
 
         # Calculate predictions
         with pyro.plate("data", batch_size):
-            # Base location effect
+            # Base location effect - ensure tensors are on same device
             base_time = location_effects[location_idx]
 
             # Driver efficiency multiplier (centered at 1.0)
@@ -347,6 +347,8 @@ class BayesianWaitTimeModel:
                 summary[param_name] = {
                     "mean": np.mean(param_np, axis=0),
                     "std": np.std(param_np, axis=0),
+                    "q025": np.percentile(param_np, 2.5, axis=0),
+                    "q975": np.percentile(param_np, 97.5, axis=0),
                     "shape": param_np.shape,
                 }
 
