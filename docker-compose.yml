@@ -1,0 +1,33 @@
+version: '3.8'
+
+services:
+  wait-time-predictor:
+    build: .
+    ports:
+      - "8501:8501"
+    environment:
+      - PYTHONPATH=/app/src
+      - STREAMLIT_SERVER_HEADLESS=true
+      - STREAMLIT_SERVER_FILE_WATCHER_TYPE=none
+      - STREAMLIT_BROWSER_GATHER_USAGE_STATS=false
+    volumes:
+      - ./outputs:/app/outputs
+      - ./data:/app/data
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8501/_stcore/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+
+  trainer:
+    build: .
+    command: python main_training.py --n_samples 2000 --mcmc_samples 1000 --use_wandb
+    environment:
+      - PYTHONPATH=/app/src
+    volumes:
+      - ./outputs:/app/outputs
+      - ./data:/app/data
+    profiles:
+      - training

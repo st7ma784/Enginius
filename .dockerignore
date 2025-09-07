@@ -1,0 +1,47 @@
+# Git
+.git
+.gitignore
+
+# Python
+__pycache__
+*.pyc
+*.pyo
+*.pyd
+.Python
+env
+venv
+.venv
+pip-log.txt
+pip-delete-this-directory.txt
+
+# IDE
+.vscode
+.idea
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Project specific
+outputs/*
+!outputs/.gitkeep
+data/*
+!data/.gitkeep
+*.log
+*.pkl
+*.pt
+
+# Documentation
+README.md
+docs/
+
+# CI/CD
+.github/
+.gitlab-ci.yml
+
+# Notebooks
+*.ipynb
+.ipynb_checkpoints

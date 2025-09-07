@@ -1,0 +1,28 @@
+venv/
+streamlit.log
+outputs/models/
+outputs/training_data.csv
+__pycache__/
+models/
+outputs/*.png
+outputs/*.json
+outputs/visualizations/
+*.pkl
+*.pyc
+*.log
+data/
+# Exclude all large files and unnecessary directories
+*.tar
+*.zip
+*.gz
+*.bz2
+*.xz
+*.7z
+# Jupyter notebook checkpoints
+.ipynb_checkpoints/
+# IDE files
+.vscode/
+.idea/
+# OS files
+.DS_Store
+Thumbs.db

@@ -1,0 +1,149 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: [3.9, 3.10]
+
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ matrix.python-version }}
+
+    - name: Cache pip dependencies
+      uses: actions/cache@v3
+      with:
+        path: ~/.cache/pip
+        key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
+        restore-keys: |
+          ${{ runner.os }}-pip-
+
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+        pip install pytest pytest-cov flake8 black isort
+
+    - name: Lint with flake8
+      run: |
+        # stop the build if there are Python syntax errors or undefined names
+        flake8 src/ --count --select=E9,F63,F7,F82 --show-source --statistics
+        # exit-zero treats all errors as warnings. The GitHub editor is 127 chars wide
+        flake8 src/ --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
+
+    - name: Check code formatting with black
+      run: black --check src/ main_training.py
+
+    - name: Check import sorting with isort
+      run: isort --check-only src/ main_training.py
+
+    - name: Run tests with pytest
+      run: |
+        pytest tests/ --cov=src --cov-report=xml --cov-report=html
+      continue-on-error: true
+
+    - name: Test data generation
+      run: |
+        python -c "
+        import sys
+        sys.path.append('src')
+        from data_generator import CarCollectionDataGenerator
+        gen = CarCollectionDataGenerator()
+        data = gen.generate_sample(100)
+        print(f'Generated {len(data)} samples successfully')
+        assert len(data) == 100
+        "
+
+    - name: Test model initialization
+      run: |
+        python -c "
+        import sys
+        sys.path.append('src')
+        from mcmc_model import BayesianWaitTimeModel
+        model = BayesianWaitTimeModel(5, 10)
+        print('Model initialized successfully')
+        "
+
+    - name: Upload coverage to Codecov
+      uses: codecov/codecov-action@v3
+      with:
+        file: ./coverage.xml
+        fail_ci_if_error: false
+
+  build-docker:
+    runs-on: ubuntu-latest
+    needs: test
+
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v2
+
+    - name: Build Docker image
+      uses: docker/build-push-action@v4
+      with:
+        context: .
+        push: false
+        tags: wait-time-predictor:latest
+        cache-from: type=gha
+        cache-to: type=gha,mode=max
+
+    - name: Test Docker container
+      run: |
+        docker run -d --name test-container -p 8501:8501 wait-time-predictor:latest
+        sleep 30
+        curl -f http://localhost:8501 || exit 1
+        docker stop test-container
+        docker rm test-container
+
+  deploy:
+    runs-on: ubuntu-latest
+    needs: [test, build-docker]
+    if: github.ref == 'refs/heads/main'
+
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v2
+
+    - name: Login to DockerHub
+      uses: docker/login-action@v2
+      with:
+        username: ${{ secrets.DOCKERHUB_USERNAME }}
+        password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+    - name: Build and push
+      uses: docker/build-push-action@v4
+      with:
+        context: .
+        push: true
+        tags: |
+          ${{ secrets.DOCKERHUB_USERNAME }}/wait-time-predictor:latest
+          ${{ secrets.DOCKERHUB_USERNAME }}/wait-time-predictor:${{ github.sha }}
+        cache-from: type=gha
+        cache-to: type=gha,mode=max
+
+    - name: Generate deployment artifacts
+      run: |
+        echo "Deployment completed at $(date)" > deployment-info.txt
+        echo "Git SHA: ${{ github.sha }}" >> deployment-info.txt
+        echo "Docker tag: ${{ secrets.DOCKERHUB_USERNAME }}/wait-time-predictor:${{ github.sha }}" >> deployment-info.txt
+
+    - name: Upload deployment artifacts
+      uses: actions/upload-artifact@v3
+      with:
+        name: deployment-artifacts
+        path: deployment-info.txt
