@@ -11,7 +11,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: [3.9, 3.10]
+        python-version: [3.9]
 
     steps:
     - uses: actions/checkout@v3
@@ -143,7 +143,7 @@ jobs:
         echo "Docker tag: ${{ secrets.DOCKERHUB_USERNAME }}/wait-time-predictor:${{ github.sha }}" >> deployment-info.txt
 
     - name: Upload deployment artifacts
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: deployment-artifacts
         path: deployment-info.txt
