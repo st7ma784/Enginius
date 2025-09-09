@@ -34,8 +34,6 @@ This project implements a comprehensive ML framework for predicting wait times f
 
 ```bash
 # Clone the repository
-git clone <repository-url>
-cd windsurf-project
 
 # Start the dashboard
 docker-compose up wait-time-predictor
