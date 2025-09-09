@@ -242,7 +242,7 @@ flake8 src/ --max-line-length=127
 
 ## 📄 License
 
-This project is developed for research and educational purposes as part of the Engenius Cascade Projects initiative.
+This project is developed for research and educational purposes any commercial applications are to acknowledge Dr Stephen Mander
 
 ## 🤝 Acknowledgments
 
